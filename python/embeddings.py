@@ -1,3 +1,12 @@
+"""
+Fetch news articles that contain the keyword,
+convert the title to a vector using the OpenAI Embedding API,
+save the results in ../data/news_with_embeddings.json.
+
+Example usage:
+    python3 embeddings.py --keyword Microsoft
+"""
+
 import argparse
 import dataclasses
 import json
@@ -7,9 +16,8 @@ from typing import Dict, List, Union
 
 import requests
 
-NUM_NEWS = 10
-START_DATETIME = "2023-01-01%2000:00:00"
-PRICE_ADA = 0.0004 / 1000
+NUM_NEWS = 100
+START_DATETIME = "2023-05-01%2000:00:00"
 
 
 @dataclass
