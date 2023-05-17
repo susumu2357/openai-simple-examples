@@ -123,6 +123,4 @@ if __name__ == "__main__":
     embedded_articles = load_news(args.keyword)
     save_embedded_articles(embedded_articles)
 
-    # embedded_articles = load_embedded_articles(
-    #     "../data/news_with_embeddings.json")
     # print(embedded_articles)
