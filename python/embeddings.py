@@ -57,10 +57,11 @@ def call_embedding(text: str) -> Embedding:
     )
 
 
-def save_json(data: Union[Dict, List[Dict]], filename: str) -> None:
+def save_json(data: Union[Dict, List[Dict]], filename: str, quiet: bool = False) -> None:
     with open(f"../data/{filename}.json", "w") as file:
         json.dump(data, file, indent=4)
-    print(f"Saved {filename}.json!")
+    if not quiet:
+        print(f"Saved {filename}.json!")
     return
 
 
@@ -122,5 +123,3 @@ if __name__ == "__main__":
 
     embedded_articles = load_news(args.keyword)
     save_embedded_articles(embedded_articles)
-
-    # print(embedded_articles)
