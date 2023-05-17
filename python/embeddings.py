@@ -1,24 +1,28 @@
+import argparse
+import dataclasses
 import json
 import os
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List, Union
 
 import requests
 
+NUM_NEWS = 10
+START_DATETIME = "2023-01-01%2000:00:00"
 PRICE_ADA = 0.0004 / 1000
 
 
 @dataclass
 class Embedding:
-    embedding: List[float]
+    vector: List[float]
     total_tokens: int
 
 
 @dataclass
 class Article:
     title: str
-    publishedAt: str
-    description: str
+    text: str
+    publish_date: str
 
 
 @dataclass
@@ -37,23 +41,33 @@ def call_embedding(text: str) -> Embedding:
     }
     res = requests.post(url, headers=headers, json=data).json()
 
-    vec: List[float] = res.data.embedding
-    total_tokens: int = res.usage.total_tokens
+    vec: List[float] = res["data"][0]["embedding"]
+    total_tokens: int = res["usage"]["total_tokens"]
     return Embedding(
-        embedding=vec,
+        vector=vec,
         total_tokens=total_tokens,
     )
 
 
+def save_json(data: Union[Dict, List[Dict]], filename: str) -> None:
+    with open(f"../data/{filename}.json", "w") as file:
+        json.dump(data, file, indent=4)
+    print(f"Saved {filename}.json!")
+    return
+
+
 def fetch_news(keyword: str) -> List[Article]:
     key = os.environ["NEWS_API_KEY"]
-    url = f"https://newsapi.org/v2/everything?q={keyword}&language=en&apiKey={key}"
+    url = f"https://api.worldnewsapi.com/search-news?text={keyword}&language=en\
+        &number={NUM_NEWS}&earliest-publish-date={START_DATETIME}&api-key={key}"
     res = requests.get(url).json()
 
-    articles: List[Article] = [
-        Article(title=article.title, publishedAt=article.publishedAt,
-                description=article.description)
-        for article in res.articles]
+    save_json(res, "news_response")
+
+    articles = [
+        Article(title=article["title"], text=article["text"],
+                publish_date=article["publish_date"])
+        for article in res["news"]]
     return articles
 
 
@@ -65,10 +79,9 @@ def load_news(keyword: str) -> List[EmbeddedArticle]:
 
 
 def save_embedded_articles(embedded_articles: List[EmbeddedArticle]) -> None:
-    embedded_articles_dict = [dataclass.asdict(
+    embedded_articles_dict = [dataclasses.asdict(
         embedded_article) for embedded_article in embedded_articles]
-    with open("../data/embedded_articles.json", "w") as file:
-        json.dump(embedded_articles_dict, file)
+    save_json(embedded_articles_dict, "news_with_embeddings")
     return
 
 
@@ -79,15 +92,29 @@ def load_embedded_articles(data_path: str) -> List[EmbeddedArticle]:
     embedded_articles = [
         EmbeddedArticle(
             article=Article(
-                title=elm.article.title,
-                publishedAt=elm.article.publishedAt,
-                description=elm.article.description
+                title=elm["article"]["title"],
+                text=elm["article"]["text"],
+                publish_date=elm["article"]["publish_date"]
             ),
             embedding=Embedding(
-                embedding=elm.embedding.embedding,
-                total_tokens=elm.embedding.total_tokens
+                vector=elm["embedding"]["vector"],
+                total_tokens=elm["embedding"]["total_tokens"]
             )
         )
         for elm in embedded_articles_dict
     ]
     return embedded_articles
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--keyword", type=str,
+                        help="keyword used to search news article")
+    args = parser.parse_args()
+
+    embedded_articles = load_news(args.keyword)
+    save_embedded_articles(embedded_articles)
+
+    # embedded_articles = load_embedded_articles(
+    #     "../data/news_with_embeddings.json")
+    # print(embedded_articles)
