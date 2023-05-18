@@ -40,6 +40,16 @@ class EmbeddedArticle:
 
 
 def call_embedding(text: str) -> Embedding:
+    """
+    Generates an embedding for a given text using the OpenAI API.
+
+    Args:
+        text: A string of text to generate an embedding for.
+
+    Returns:
+        An Embedding object containing the text's embedding vector
+        and the total number of tokens used to generate the embedding.
+    """
     url = "https://api.openai.com/v1/embeddings"
     key = os.environ["OPENAI_API_KEY"]
     headers = {"Authorization": f"Bearer {key}"}
@@ -58,6 +68,17 @@ def call_embedding(text: str) -> Embedding:
 
 
 def save_json(data: Union[Dict, List[Dict]], filename: str, quiet: bool = False) -> None:
+    """
+    Saves a dictionary or list of dictionaries to a JSON file.
+
+    Args:
+        data: A dictionary or list of dictionaries to save to a JSON file.
+        filename: The name of the file to save the data to.
+        quiet: If True, suppresses the output message indicating that the file was saved.
+
+    Returns:
+        None
+    """
     with open(f"../data/{filename}.json", "w") as file:
         json.dump(data, file, indent=4)
     if not quiet:
@@ -66,6 +87,15 @@ def save_json(data: Union[Dict, List[Dict]], filename: str, quiet: bool = False)
 
 
 def fetch_news(keyword: str) -> List[Article]:
+    """
+    Fetches news articles containing a given keyword using the World News API.
+
+    Args:
+        keyword: A string representing the keyword to search for in news articles.
+
+    Returns:
+        A list of Article objects containing the title, text, and publish date of each article.
+    """
     key = os.environ["NEWS_API_KEY"]
     url = f"https://api.worldnewsapi.com/search-news?text={keyword}&language=en\
         &number={NUM_NEWS}&earliest-publish-date={START_DATETIME}&api-key={key}"
@@ -81,6 +111,16 @@ def fetch_news(keyword: str) -> List[Article]:
 
 
 def load_news(keyword: str) -> List[EmbeddedArticle]:
+    """
+    Loads news articles containing a given keyword, generates embeddings
+    for each article title, and returns a list of EmbeddedArticle objects.
+
+    Args:
+        keyword: A string representing the keyword to search for in news articles.
+
+    Returns:
+        A list of EmbeddedArticle objects containing the article and its embedding.
+    """
     articles = fetch_news(keyword)
     title_embeddings = [call_embedding(article.title) for article in articles]
     return [EmbeddedArticle(article=article, embedding=embedding)
@@ -88,6 +128,15 @@ def load_news(keyword: str) -> List[EmbeddedArticle]:
 
 
 def save_embedded_articles(embedded_articles: List[EmbeddedArticle]) -> None:
+    """
+    Saves a list of EmbeddedArticle objects to a JSON file.
+
+    Args:
+        embedded_articles: A list of EmbeddedArticle objects to save to a JSON file.
+
+    Returns:
+        None
+    """
     embedded_articles_dict = [dataclasses.asdict(
         embedded_article) for embedded_article in embedded_articles]
     save_json(embedded_articles_dict, "news_with_embeddings")
@@ -95,6 +144,16 @@ def save_embedded_articles(embedded_articles: List[EmbeddedArticle]) -> None:
 
 
 def load_embedded_articles(data_path: str) -> List[EmbeddedArticle]:
+    """
+    Loads a list of EmbeddedArticle objects from a JSON file.
+
+    Args:
+        data_path: A string representing the path to the JSON file
+        containing the EmbeddedArticle objects.
+
+    Returns:
+        A list of EmbeddedArticle objects.
+    """
     with open(data_path, "r") as file:
         embedded_articles_dict = json.load(file)
 

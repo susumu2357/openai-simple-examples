@@ -40,12 +40,25 @@ class Messages:
     messages: List[Message]
 
     def to_dict(self) -> List[Dict[str, str]]:
+        """Converts the Messages object to a list of dictionaries.
+
+        Returns:
+            A list of dictionaries representing the Messages object.
+        """
         return [
             {"role": message.role.value, "content": message.content}
             for message in self.messages
         ]
 
     def append(self, other_message: Message):
+        """Appends a new Message object to the Messages object.
+
+        Args:
+            other_message: A Message object to append to the Messages object.
+
+        Returns:
+            A new Messages object with the appended Message object.
+        """
         return Messages(messages=self.messages + [other_message])
 
 
@@ -65,6 +78,14 @@ embedded_articles = load_embedded_articles(
 
 
 def articles_relevance_order(question: str) -> List[EmbeddedArticle]:
+    """Returns a list of EmbeddedArticle objects sorted by relevance to the given question.
+
+    Args:
+        question: A string representing the user's question.
+
+    Returns:
+        A list of EmbeddedArticle objects sorted by relevance to the given question.
+    """
     q_emb = call_embedding(question)
     similarity_scores = [
         sum(map(mul, q_emb.vector, ref.embedding.vector))
@@ -80,6 +101,16 @@ def articles_relevance_order(question: str) -> List[EmbeddedArticle]:
 
 
 def compose_prompt(sorted_articles: List[EmbeddedArticle], question: str) -> Messages:
+    """Composes a prompt for the user based on the sorted list of EmbeddedArticle objects
+    and the user's question.
+
+    Args:
+        sorted_articles: A list of EmbeddedArticle objectssorted by relevance to the user's question.
+        question: A string representing the user's question.
+
+    Returns:
+        A Messages object representing the prompt for the user.
+    """
     num_chars = 0
     references = []
 

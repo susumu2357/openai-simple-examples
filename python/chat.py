@@ -15,6 +15,19 @@ from prompt import Message, Messages, Role, articles_relevance_order, compose_pr
 
 
 def call_gpt(messages: Messages, temperature: float) -> Messages:
+    """Fetches GPT-generated responses for given messages.
+
+    Sends the input messages to the GPT API and retrieves generated
+    responses based on the given temperature.
+
+    Args:
+        messages: A Messages instance containing the conversation history.
+        temperature: A float between 0 and 2 representing the randomness of the generated
+          response. Lower values make the output more focused and deterministic.
+
+    Returns:
+        A Messages instance with the GPT-generated response appended.
+    """
     url = "https://api.openai.com/v1/chat/completions"
     key = os.environ["OPENAI_API_KEY"]
     headers = {"Authorization": f"Bearer {key}"}
