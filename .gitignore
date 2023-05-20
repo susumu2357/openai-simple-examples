@@ -416,3 +416,5 @@ paket-files/
 *.sln.iml
 
 # Coverage Report
+
+/fsharp/Scratch.fsx
