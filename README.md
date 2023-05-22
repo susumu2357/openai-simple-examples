@@ -9,8 +9,8 @@ The code uses the `requests` to call the OpenAI API instead of the `openai` to m
 Note that, there are [community-maintained libraries](https://platform.openai.com/docs/libraries/community-libraries) for most of major languages.
 
 A translation to F# is [fsharp/Embeddings.fs](fsharp/Embeddings.fs).  
-Since `System.Net.WebRequest` is deprecated, it should be rewritten using `System.Net.Http.HttpClient`.
-Also, the JSON handling process should be improved.
+The post request in the `callEmbedding` is better to be handled asynchronously.
+Also, the schema for the response is better to be defined for transparency.
 
 ## 2. Compose prompt
 - Convert the question to an embedding vector using the OpenAI embedding API.

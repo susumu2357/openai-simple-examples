@@ -2,12 +2,10 @@ module Embeddings
 
 open System
 open System.IO
-open System.Net
+open System.Text
 open System.Net.Http
 open System.Text.Json
 open System.Collections.Generic
-
-open Argu
 
 type Embedding = {
     vector: float list
@@ -36,31 +34,33 @@ let START_DATETIME = "2023-05-01%2000:00:00"
 let callEmbedding (text: string)  =
     let url = "https://api.openai.com/v1/embeddings"
     let key = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
-    let headers = new WebHeaderCollection()
-    headers.Add("Authorization", "Bearer " + key)
-    let req = WebRequest.Create(url)
-    req.Method <- "POST"
-    req.Headers <- headers
-    req.ContentType <- "application/json"
-    use streamWriter = new StreamWriter(req.GetRequestStream())
+
+    let client = new HttpClient()
+    client.DefaultRequestHeaders.Add("Authorization", sprintf "Bearer %s" key)
     let data = JsonSerializer.Serialize(
         {
             input=text
             model="text-embedding-ada-002"
         })
-    streamWriter.Write(data)
-    streamWriter.Flush()
-    let res = req.GetResponse()
-    use streamReader = new StreamReader(res.GetResponseStream())
-    let resJson = streamReader.ReadToEnd()
-    let resObj = JsonSerializer.Deserialize<Dictionary<string, obj>>(resJson)
-    let vec = resObj.["data"] :?> JsonElement
-            |> fun x -> x.EnumerateArray()
-            |> Seq.map (fun x -> x.GetProperty("embedding"))
-            |> Seq.head
-            |> fun x -> x.EnumerateArray()
-            |> Seq.map(fun x -> x.GetDouble())
-            |> Seq.toList
+    use content = new StringContent(data, Encoding.UTF8, "application/json")
+    let res =
+        client.PostAsync(url, content)
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+    let resObj =
+        res.Content.ReadAsStringAsync()
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+        |> JsonSerializer.Deserialize<Dictionary<string, obj>>
+
+    let vec = 
+        resObj.["data"] :?> JsonElement
+        |> fun x -> x.EnumerateArray()
+        |> Seq.map (fun x -> x.GetProperty("embedding"))
+        |> Seq.head
+        |> fun x -> x.EnumerateArray()
+        |> Seq.map(fun x -> x.GetDouble())
+        |> Seq.toList
     let total_tokens =
         resObj.["usage"] :?> JsonElement
         |> fun x -> x.GetProperty("total_tokens").GetInt32()

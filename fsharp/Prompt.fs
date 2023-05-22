@@ -1,7 +1,6 @@
 module Prompt
 
 open System
-
 open Embeddings
 
 let SYSTEM = "system"

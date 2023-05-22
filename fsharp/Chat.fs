@@ -2,7 +2,9 @@ module Chat
 
 open System
 open System.IO
+open System.Text
 open System.Net
+open System.Net.Http
 open System.Text.Json
 open System.Collections.Generic
 
@@ -19,13 +21,9 @@ type OpenAIChatCompletionData = {
 let callGpt (messages: Message list) (temperature: float) =
     let url = "https://api.openai.com/v1/chat/completions"
     let key = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
-    let headers = new WebHeaderCollection()
-    headers.Add("Authorization", "Bearer " + key)
-    let req = WebRequest.Create(url)
-    req.Method <- "POST"
-    req.Headers <- headers
-    req.ContentType <- "application/json"
-    use streamWriter = new StreamWriter(req.GetRequestStream())
+
+    let client = new HttpClient()
+    client.DefaultRequestHeaders.Add("Authorization", sprintf "Bearer %s" key)
     let data = JsonSerializer.Serialize(
         {
             messages = messages
@@ -34,13 +32,18 @@ let callGpt (messages: Message list) (temperature: float) =
             stream = false
             }
             )
-    streamWriter.Write(data)
-    streamWriter.Flush()
-    let res = req.GetResponse()
-    use streamReader = new StreamReader(res.GetResponseStream())
-    let resJson = streamReader.ReadToEnd()
-    let response = JsonSerializer.Deserialize<Dictionary<string, obj>>(resJson)
-    let choices = response.Item("choices") :?> JsonElement
+    use content = new StringContent(data, Encoding.UTF8, "application/json")
+    let res =
+        client.PostAsync(url, content)
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+    let resObj =
+        res.Content.ReadAsStringAsync()
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+        |> JsonSerializer.Deserialize<Dictionary<string, obj>>
+
+    let choices = resObj.["choices"] :?> JsonElement
     let content =
         choices
         |> fun x -> x.EnumerateArray()
