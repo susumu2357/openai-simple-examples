@@ -41,11 +41,10 @@ let callGpt (messages: Message list) (temperature: float) =
         res.Content.ReadAsStringAsync()
         |> Async.AwaitTask
         |> Async.RunSynchronously
-        |> JsonSerializer.Deserialize<Dictionary<string, obj>>
+        |> JsonSerializer.Deserialize<Dictionary<string, JsonElement>>
 
-    let choices = resObj.["choices"] :?> JsonElement
     let content =
-        choices
+        resObj.["choices"]
         |> fun x -> x.EnumerateArray()
         |> Seq.head
         |> fun x -> x.GetProperty("message")
@@ -75,5 +74,4 @@ let chat temperature noReference =
             saveJson messages "fsharp_chat_log" true
             printfn ""
         with
-        | :? IOException as _ -> ()
-        | _ -> ()
+        | e -> printfn "%A" e

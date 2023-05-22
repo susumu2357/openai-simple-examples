@@ -51,10 +51,10 @@ let callEmbedding (text: string)  =
         res.Content.ReadAsStringAsync()
         |> Async.AwaitTask
         |> Async.RunSynchronously
-        |> JsonSerializer.Deserialize<Dictionary<string, obj>>
+        |> JsonSerializer.Deserialize<Dictionary<string, JsonElement>>
 
     let vec = 
-        resObj.["data"] :?> JsonElement
+        resObj.["data"]
         |> fun x -> x.EnumerateArray()
         |> Seq.map (fun x -> x.GetProperty("embedding"))
         |> Seq.head
@@ -62,7 +62,7 @@ let callEmbedding (text: string)  =
         |> Seq.map(fun x -> x.GetDouble())
         |> Seq.toList
     let total_tokens =
-        resObj.["usage"] :?> JsonElement
+        resObj.["usage"]
         |> fun x -> x.GetProperty("total_tokens").GetInt32()
     { vector = vec; total_tokens = total_tokens }
 
@@ -86,8 +86,8 @@ let fetchNews (keyword: string) : Article list =
         res.Content.ReadAsStringAsync()
         |> Async.AwaitTask
         |> Async.RunSynchronously
-        |> JsonSerializer.Deserialize<Dictionary<string, obj>>
-    let articles = resObj.["news"] :?> JsonElement
+        |> JsonSerializer.Deserialize<Dictionary<string, JsonElement>>
+    let articles = resObj.["news"]
                     |> fun x -> x.EnumerateArray()
                     |> Seq.map (fun x -> {
                         title = x.GetProperty("title").GetString()
